@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Prompt, Category, PromptVersion, Like, Comment, SavedPrompt, Follow, Notification, Report
+from .models import Prompt, Category, PromptVersion, Like, Comment, SavedPrompt, PromptView, Follow, Notification, Report
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -21,6 +21,7 @@ class PromptSerializer(serializers.ModelSerializer):
     # Computed fields for current user's interaction state
     is_liked_by_user = serializers.SerializerMethodField()
     is_saved_by_user = serializers.SerializerMethodField()
+    is_viewed_by_user = serializers.SerializerMethodField()
     
     # Field aliases for frontend compatibility
     likes_count = serializers.IntegerField(source='like_count', read_only=True)
@@ -31,7 +32,7 @@ class PromptSerializer(serializers.ModelSerializer):
         model = Prompt
         fields = ['id', 'owner', 'title', 'text', 'ai_model', 'example_output', 'tags', 'use_case', 'category', 'is_public',
                   'usage_count', 'likes_count', 'comment_count', 'saves_count', 'trend_score',
-                  'is_liked_by_user', 'is_saved_by_user',
+                  'is_liked_by_user', 'is_saved_by_user', 'is_viewed_by_user',
                   'created_at', 'updated_at', 'versions']
         read_only_fields = ['owner', 'usage_count', 'likes_count', 'comment_count', 
                             'saves_count', 'trend_score', 'created_at', 'updated_at']
@@ -48,6 +49,13 @@ class PromptSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.saved_by.filter(user=request.user).exists()
+        return False
+    
+    def get_is_viewed_by_user(self, obj):
+        """Check if the current user has viewed this prompt"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.viewed_by.filter(user=request.user).exists()
         return False
 
 class CategorySerializer(serializers.ModelSerializer):

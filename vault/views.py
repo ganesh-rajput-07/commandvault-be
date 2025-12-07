@@ -19,9 +19,9 @@ class PromptViewSet(viewsets.ModelViewSet):
         else:
             queryset = queryset.filter(is_public=True)
         
-        # Prefetch likes and saves to avoid N+1 queries
+        # Prefetch likes, saves, and views to avoid N+1 queries
         return queryset.select_related('owner', 'category').prefetch_related(
-            'likes', 'saved_by'
+            'likes', 'saved_by', 'viewed_by'
         ).order_by('-updated_at')
 
     def perform_create(self, serializer):
@@ -46,6 +46,31 @@ class PromptViewSet(viewsets.ModelViewSet):
         prompt.save()
         prompt.refresh_from_db()
         return Response({'times_used': prompt.times_used})
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def record_view(self, request, pk=None):
+        """Record that user viewed this prompt (opened detail modal)"""
+        from .models import PromptView
+        prompt = self.get_object()
+        
+        view, created = PromptView.objects.get_or_create(user=request.user, prompt=prompt)
+        
+        if created:
+            # Increment view count only on first view
+            prompt.times_used = F('times_used') + 1
+            prompt.save()
+            prompt.refresh_from_db()
+            return Response({
+                'viewed': True,
+                'message': 'View recorded',
+                'usage_count': prompt.times_used
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'viewed': True,
+                'message': 'Already viewed',
+                'usage_count': prompt.times_used
+            }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def search(self, request):

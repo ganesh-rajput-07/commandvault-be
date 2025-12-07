@@ -85,6 +85,20 @@ class SavedPrompt(models.Model):
     def __str__(self):
         return f"{self.user.username} saved {self.prompt.title}"
 
+class PromptView(models.Model):
+    """Track when users view prompts (open detail modal)"""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='prompt_views')
+    prompt = models.ForeignKey(Prompt, on_delete=models.CASCADE, related_name='viewed_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'prompt')
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['user', 'prompt'])]
+
+    def __str__(self):
+        return f"{self.user.username} viewed {self.prompt.title}"
+
 class Follow(models.Model):
     follower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='following')
     following = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='followers')
