@@ -95,7 +95,7 @@ class PromptViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def mine(self, request):
         qs = Prompt.objects.filter(owner=request.user, is_deleted=False).prefetch_related(
-            'likes', 'saved_by'
+            'likes', 'saved_by', 'viewed_by'
         ).order_by('-created_at')
         page = self.paginate_queryset(qs)
         if page is not None:
@@ -107,7 +107,7 @@ class PromptViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def trending(self, request):
         qs = Prompt.objects.filter(is_public=True, is_deleted=False).prefetch_related(
-            'likes', 'saved_by'
+            'likes', 'saved_by', 'viewed_by'
         ).order_by('-trend_score', '-like_count')
         page = self.paginate_queryset(qs)
         if page is not None:
