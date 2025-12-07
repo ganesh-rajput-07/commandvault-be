@@ -18,7 +18,11 @@ class PromptViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(Q(is_public=True) | Q(owner=self.request.user))
         else:
             queryset = queryset.filter(is_public=True)
-        return queryset.select_related('owner', 'category').order_by('-updated_at')
+        
+        # Prefetch likes and saves to avoid N+1 queries
+        return queryset.select_related('owner', 'category').prefetch_related(
+            'likes', 'saved_by'
+        ).order_by('-updated_at')
 
     def perform_create(self, serializer):
         tags, use_case = auto_tag_and_use_case(
@@ -65,7 +69,9 @@ class PromptViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def mine(self, request):
-        qs = Prompt.objects.filter(owner=request.user, is_deleted=False).order_by('-created_at')
+        qs = Prompt.objects.filter(owner=request.user, is_deleted=False).prefetch_related(
+            'likes', 'saved_by'
+        ).order_by('-created_at')
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -75,7 +81,9 @@ class PromptViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def trending(self, request):
-        qs = Prompt.objects.filter(is_public=True, is_deleted=False).order_by('-trend_score', '-like_count')
+        qs = Prompt.objects.filter(is_public=True, is_deleted=False).prefetch_related(
+            'likes', 'saved_by'
+        ).order_by('-trend_score', '-like_count')
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

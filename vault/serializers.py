@@ -17,14 +17,38 @@ class OwnerSerializer(serializers.ModelSerializer):
 class PromptSerializer(serializers.ModelSerializer):
     owner = OwnerSerializer(read_only=True)
     versions = PromptVersionSerializer(many=True, read_only=True)
+    
+    # Computed fields for current user's interaction state
+    is_liked_by_user = serializers.SerializerMethodField()
+    is_saved_by_user = serializers.SerializerMethodField()
+    
+    # Field aliases for frontend compatibility
+    likes_count = serializers.IntegerField(source='like_count', read_only=True)
+    saves_count = serializers.IntegerField(source='save_count', read_only=True)
+    usage_count = serializers.IntegerField(source='times_used', read_only=True)
 
     class Meta:
         model = Prompt
         fields = ['id', 'owner', 'title', 'text', 'ai_model', 'example_output', 'tags', 'use_case', 'category', 'is_public',
-                  'times_used', 'like_count', 'comment_count', 'save_count', 'trend_score',
+                  'usage_count', 'likes_count', 'comment_count', 'saves_count', 'trend_score',
+                  'is_liked_by_user', 'is_saved_by_user',
                   'created_at', 'updated_at', 'versions']
-        read_only_fields = ['owner', 'times_used', 'like_count', 'comment_count', 
-                            'save_count', 'trend_score', 'created_at', 'updated_at']
+        read_only_fields = ['owner', 'usage_count', 'likes_count', 'comment_count', 
+                            'saves_count', 'trend_score', 'created_at', 'updated_at']
+    
+    def get_is_liked_by_user(self, obj):
+        """Check if the current user has liked this prompt"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.likes.filter(user=request.user).exists()
+        return False
+    
+    def get_is_saved_by_user(self, obj):
+        """Check if the current user has saved this prompt"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.saved_by.filter(user=request.user).exists()
+        return False
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
