@@ -8,6 +8,7 @@ class User(AbstractUser):
     bio = models.TextField(blank=True, null=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     avatar_url = models.URLField(blank=True, null=True)  # Keep for Google avatars
+    banner = models.ImageField(upload_to='banners/', blank=True, null=True)  # YouTube-style banner
     follower_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
     profile_updated_at = models.DateTimeField(auto_now=True)
