@@ -8,6 +8,6 @@ urlpatterns = [
     path('refresh/', TokenRefreshView.as_view(), name='refresh'),
     path('google-login/', GoogleLoginView.as_view(), name='google-login'),
     path('profile/', UserProfileView.as_view(), name='profile'),
-    path('profile/update/', UserUpdateView.as_view(), name='profile-update'),
+    path('user/', UserUpdateView.as_view(), name='user-update'),  # Changed from profile/update/
     path('deactivate/', DeactivateAccountView.as_view(), name='deactivate'),
 ]

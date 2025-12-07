@@ -6,7 +6,8 @@ class User(AbstractUser):
     google_id = models.CharField(max_length=255, blank=True, null=True)
     is_google_account = models.BooleanField(default=False)
     bio = models.TextField(blank=True, null=True)
-    avatar_url = models.URLField(blank=True, null=True)
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    avatar_url = models.URLField(blank=True, null=True)  # Keep for Google avatars
     follower_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
     profile_updated_at = models.DateTimeField(auto_now=True)
