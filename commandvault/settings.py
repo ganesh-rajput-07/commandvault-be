@@ -160,7 +160,9 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Google OAuth
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID_HERE"
+GOOGLE_CLIENT_ID = "895063316325-2lloidlfvrbj41mji6voiqm5tfq4choj.apps.googleusercontent.com"
+
+GOOGLE_CLIENT_SECRET="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"
 
 # Swagger/OpenAPI Settings
 SPECTACULAR_SETTINGS = {
