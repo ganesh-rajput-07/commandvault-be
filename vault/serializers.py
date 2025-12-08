@@ -10,9 +10,19 @@ class PromptVersionSerializer(serializers.ModelSerializer):
         fields = ['id', 'old_title', 'old_text', 'created_at']
 
 class OwnerSerializer(serializers.ModelSerializer):
+    is_following = serializers.SerializerMethodField()
+    
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'avatar_url']
+        fields = ['id', 'username', 'email', 'avatar', 'follower_count', 'is_following']
+    
+    def get_is_following(self, obj):
+        """Check if the current user is following this user"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and request.user != obj:
+            return Follow.objects.filter(follower=request.user, following=obj).exists()
+        return False
+
 
 class PromptSerializer(serializers.ModelSerializer):
     owner = OwnerSerializer(read_only=True)

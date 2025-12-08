@@ -20,7 +20,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'bio', 'avatar', 'is_google_account', 
+        fields = ('id', 'email', 'username', 'bio', 'avatar', 'banner', 'is_google_account', 
                   'follower_count', 'following_count', 'date_joined', 'profile_updated_at')
         read_only_fields = ('id', 'email', 'is_google_account', 'follower_count', 
                             'following_count', 'date_joined', 'profile_updated_at')
@@ -74,7 +74,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('username', 'bio', 'avatar', 'banner')
+        fields = ('username', 'bio', 'avatar', 'banner', 'avatar_url')
     
     def validate_username(self, value):
         user = self.context['request'].user
@@ -107,12 +107,22 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # Handle avatar upload
         avatar = validated_data.pop('avatar', None)
+        # Check if avatar_url is being updated (it might be in validated_data)
+        avatar_url = validated_data.get('avatar_url')
+
         if avatar:
             # Delete old avatar if exists
             if instance.avatar:
                 instance.avatar.delete(save=False)
             instance.avatar = avatar
-        
+            # We don't necessarily need to clear avatar_url, but instance.avatar takes priority anyway.
+        elif avatar_url:
+             # If setting a URL and NOT a file, allows switching to URL.
+             # We should clear the existing file so the URL takes priority in get_avatar.
+             if instance.avatar:
+                 instance.avatar.delete(save=False)
+                 instance.avatar = None
+
         # Handle banner upload
         banner = validated_data.pop('banner', None)
         if banner:
