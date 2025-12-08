@@ -65,6 +65,20 @@ class UserUpdateView(generics.UpdateAPIView):
         context['request'] = self.request
         return context
 
+class PublicUserProfileView(generics.RetrieveAPIView):
+    """View for getting any user's public profile"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserProfileSerializer
+    lookup_field = 'pk'
+    
+    def get_queryset(self):
+        return User.objects.filter(is_active=True)
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
 class DeactivateAccountView(APIView):
     permission_classes = [IsAuthenticated]
 

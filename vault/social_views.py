@@ -21,7 +21,8 @@ class LikeViewSet(viewsets.GenericViewSet):
         
         if not created:
             like.delete()
-            Like.objects.filter(prompt_id=prompt_id).update(like_count=F('like_count') - 1)
+            from .models import Prompt
+            Prompt.objects.filter(id=prompt_id).update(like_count=F('like_count') - 1)
             return Response({'liked': False, 'message': 'Unliked'}, status=status.HTTP_200_OK)
         else:
             from .models import Prompt
