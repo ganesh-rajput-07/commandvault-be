@@ -19,6 +19,23 @@ class PromptViewSet(viewsets.ModelViewSet):
         else:
             queryset = queryset.filter(is_public=True)
         
+        # Search functionality via query parameters
+        search_query = self.request.query_params.get('search', '').strip()
+        ai_model = self.request.query_params.get('ai_model', '').strip()
+        
+        if search_query:
+            # Search across multiple fields: title, content, tags, username, AI model
+            queryset = queryset.filter(
+                Q(title__icontains=search_query) |
+                Q(text__icontains=search_query) |
+                Q(tags__icontains=search_query) |
+                Q(ai_model__icontains=search_query) |
+                Q(owner__username__icontains=search_query)
+            )
+        
+        if ai_model and ai_model.lower() != 'all':
+            queryset = queryset.filter(ai_model__iexact=ai_model)
+        
         # Prefetch likes, saves, and views to avoid N+1 queries
         return queryset.select_related('owner', 'category').prefetch_related(
             'likes', 'saved_by', 'viewed_by'
@@ -114,6 +131,33 @@ class PromptViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['get'])
+    def similar(self, request, pk=None):
+        """Get similar prompts based on AI model and tags"""
+        prompt = self.get_object()
+        
+        # Find prompts with same AI model or overlapping tags
+        similar_qs = Prompt.objects.filter(
+            is_public=True,
+            is_deleted=False
+        ).exclude(id=prompt.id)
+        
+        # Filter by same AI model or overlapping tags
+        if prompt.ai_model:
+            similar_qs = similar_qs.filter(
+                Q(ai_model=prompt.ai_model) | Q(tags__overlap=prompt.tags or [])
+            )
+        elif prompt.tags:
+            similar_qs = similar_qs.filter(tags__overlap=prompt.tags)
+        
+        # Order by relevance (same model first, then by trend score)
+        similar_qs = similar_qs.select_related('owner').prefetch_related(
+            'likes', 'saved_by', 'viewed_by'
+        ).order_by('-trend_score', '-like_count')[:6]
+        
+        serializer = self.get_serializer(similar_qs, many=True)
         return Response(serializer.data)
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
