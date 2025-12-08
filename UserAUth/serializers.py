@@ -17,11 +17,12 @@ class RegisterSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
     banner = serializers.SerializerMethodField()
+    is_following = serializers.SerializerMethodField()
     
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'bio', 'avatar', 'banner', 'is_google_account', 
-                  'follower_count', 'following_count', 'date_joined', 'profile_updated_at')
+                  'follower_count', 'following_count', 'date_joined', 'profile_updated_at', 'is_following')
         read_only_fields = ('id', 'email', 'is_google_account', 'follower_count', 
                             'following_count', 'date_joined', 'profile_updated_at')
     
@@ -67,6 +68,14 @@ class UserProfileSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.banner.url)
             return obj.banner.url
         return None
+    
+    def get_is_following(self, obj):
+        """Check if the current user is following this user"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated and request.user != obj:
+            from vault.models import Follow
+            return Follow.objects.filter(follower=request.user, following=obj).exists()
+        return False
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False, allow_null=True)

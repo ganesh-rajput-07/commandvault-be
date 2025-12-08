@@ -19,6 +19,11 @@ class PromptViewSet(viewsets.ModelViewSet):
         else:
             queryset = queryset.filter(is_public=True)
         
+        # Filter by owner (for user profile pages)
+        owner_id = self.request.query_params.get('owner_id', '').strip()
+        if owner_id:
+            queryset = queryset.filter(owner_id=owner_id)
+        
         # Search functionality via query parameters
         search_query = self.request.query_params.get('search', '').strip()
         ai_model = self.request.query_params.get('ai_model', '').strip()
