@@ -40,11 +40,11 @@ class PromptSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Prompt
-        fields = ['id', 'owner', 'title', 'text', 'ai_model', 'example_output', 'tags', 'use_case', 'category', 'is_public',
+        fields = ['id', 'owner', 'title', 'slug', 'text', 'ai_model', 'example_output', 'tags', 'use_case', 'category', 'is_public',
                   'usage_count', 'likes_count', 'comment_count', 'saves_count', 'trend_score',
                   'is_liked_by_user', 'is_saved_by_user', 'is_viewed_by_user',
                   'created_at', 'updated_at', 'versions']
-        read_only_fields = ['owner', 'usage_count', 'likes_count', 'comment_count', 
+        read_only_fields = ['owner', 'slug', 'usage_count', 'likes_count', 'comment_count', 
                             'saves_count', 'trend_score', 'created_at', 'updated_at']
     
     def get_is_liked_by_user(self, obj):

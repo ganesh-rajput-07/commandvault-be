@@ -11,6 +11,7 @@ from .utils import auto_tag_and_use_case
 class PromptViewSet(viewsets.ModelViewSet):
     serializer_class = PromptSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    lookup_field = 'slug'
 
     def get_queryset(self):
         queryset = Prompt.objects.filter(is_deleted=False)

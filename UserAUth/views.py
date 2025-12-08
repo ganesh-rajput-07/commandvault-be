@@ -66,10 +66,10 @@ class UserUpdateView(generics.UpdateAPIView):
         return context
 
 class PublicUserProfileView(generics.RetrieveAPIView):
-    """View for getting any user's public profile"""
+    """View for getting any user's public profile by username"""
     permission_classes = [IsAuthenticated]
     serializer_class = UserProfileSerializer
-    lookup_field = 'pk'
+    lookup_field = 'username'
     
     def get_queryset(self):
         return User.objects.filter(is_active=True)

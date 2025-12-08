@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.utils.text import slugify
+import uuid
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -10,6 +12,7 @@ class Category(models.Model):
 class Prompt(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='prompts')
     title = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=300, blank=True, db_index=True)  # Not unique to avoid migration issues
     text = models.TextField()
     ai_model = models.CharField(max_length=100, blank=True, help_text="AI model/tool used (e.g., ChatGPT-4, Claude, Gemini)")
     example_output = models.TextField(blank=True, help_text="Example output from this prompt")
@@ -33,6 +36,15 @@ class Prompt(models.Model):
             models.Index(fields=['is_public', '-trend_score']),
             models.Index(fields=['-created_at']),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Generate slug from title with ID for uniqueness
+            base_slug = slugify(self.title)[:270]
+            # Add a short random suffix for uniqueness
+            unique_suffix = str(uuid.uuid4())[:8]
+            self.slug = f"{base_slug}-{unique_suffix}" if base_slug else f"prompt-{unique_suffix}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title
