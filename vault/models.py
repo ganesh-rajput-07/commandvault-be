@@ -16,6 +16,19 @@ class Prompt(models.Model):
     text = models.TextField()
     ai_model = models.CharField(max_length=100, blank=True, help_text="AI model/tool used (e.g., ChatGPT-4, Claude, Gemini)")
     example_output = models.TextField(blank=True, help_text="Example output from this prompt")
+    
+    # Media outputs
+    output_image = models.ImageField(upload_to='prompt_outputs/images/', blank=True, null=True, help_text="Example image output")
+    output_video = models.FileField(upload_to='prompt_outputs/videos/', blank=True, null=True, help_text="Example video output")
+    output_audio = models.FileField(upload_to='prompt_outputs/audio/', blank=True, null=True, help_text="Example audio output")
+    output_type = models.CharField(max_length=20, blank=True, choices=[
+        ('text', 'Text'),
+        ('image', 'Image'),
+        ('video', 'Video'),
+        ('audio', 'Audio'),
+        ('code', 'Code'),
+    ], help_text="Type of output example")
+    
     tags = models.JSONField(default=list, blank=True)
     use_case = models.CharField(max_length=100, blank=True, null=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)

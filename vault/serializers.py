@@ -40,7 +40,9 @@ class PromptSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Prompt
-        fields = ['id', 'owner', 'title', 'slug', 'text', 'ai_model', 'example_output', 'tags', 'use_case', 'category', 'is_public',
+        fields = ['id', 'owner', 'title', 'slug', 'text', 'ai_model', 'example_output', 
+                  'output_image', 'output_video', 'output_audio', 'output_type',
+                  'tags', 'use_case', 'category', 'is_public',
                   'usage_count', 'likes_count', 'comment_count', 'saves_count', 'trend_score',
                   'is_liked_by_user', 'is_saved_by_user', 'is_viewed_by_user',
                   'created_at', 'updated_at', 'versions']
