@@ -22,11 +22,17 @@ class LikeViewSet(viewsets.GenericViewSet):
         if not created:
             like.delete()
             from .models import Prompt
-            Prompt.objects.filter(id=prompt_id).update(like_count=F('like_count') - 1)
+            Prompt.objects.filter(id=prompt_id).update(
+                like_count=F('like_count') - 1,
+                trend_score=F('trend_score') - 5
+            )
             return Response({'liked': False, 'message': 'Unliked'}, status=status.HTTP_200_OK)
         else:
             from .models import Prompt
-            Prompt.objects.filter(id=prompt_id).update(like_count=F('like_count') + 1)
+            Prompt.objects.filter(id=prompt_id).update(
+                like_count=F('like_count') + 1,
+                trend_score=F('trend_score') + 5
+            )
             return Response({'liked': True, 'message': 'Liked'}, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['get'])

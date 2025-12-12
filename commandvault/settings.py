@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'vault',
-    'UserAUth'
+    'UserAUth',
 ]
 
 AUTH_USER_MODEL = 'UserAUth.User'

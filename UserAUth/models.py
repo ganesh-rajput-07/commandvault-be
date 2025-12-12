@@ -11,6 +11,7 @@ class User(AbstractUser):
     banner = models.ImageField(upload_to='banners/', blank=True, null=True)  # YouTube-style banner
     follower_count = models.IntegerField(default=0)
     following_count = models.IntegerField(default=0)
+    is_email_public = models.BooleanField(default=False)
     profile_updated_at = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD = 'email'

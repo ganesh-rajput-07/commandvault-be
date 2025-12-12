@@ -18,14 +18,24 @@ class UserProfileSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
     banner = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'bio', 'avatar', 'banner', 'is_google_account', 
-                  'follower_count', 'following_count', 'date_joined', 'profile_updated_at', 'is_following')
-        read_only_fields = ('id', 'email', 'is_google_account', 'follower_count', 
+        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'bio', 'avatar', 'banner', 'is_google_account', 
+                  'follower_count', 'following_count', 'date_joined', 'profile_updated_at', 'is_following', 'is_email_public')
+        read_only_fields = ('id', 'is_google_account', 'follower_count', 
                             'following_count', 'date_joined', 'profile_updated_at')
     
+    def get_email(self, obj):
+        """Return email only if public or if it's the requesting user"""
+        request = self.context.get('request')
+        if obj.is_email_public:
+            return obj.email
+        if request and request.user == obj:
+            return obj.email
+        return None
+
     def get_avatar(self, obj):
         """
         Return avatar URL with smart priority:
@@ -80,10 +90,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=False, allow_null=True)
     banner = serializers.ImageField(required=False, allow_null=True)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    is_email_public = serializers.BooleanField(required=False)
     
     class Meta:
         model = User
-        fields = ('username', 'bio', 'avatar', 'banner', 'avatar_url')
+        fields = ('username', 'first_name', 'last_name', 'bio', 'avatar', 'banner', 'avatar_url', 'is_email_public')
     
     def validate_username(self, value):
         user = self.context['request'].user

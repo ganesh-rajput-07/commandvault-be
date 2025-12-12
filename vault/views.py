@@ -81,7 +81,8 @@ class PromptViewSet(viewsets.ModelViewSet):
         if created:
             # Increment view count only on first view
             prompt.times_used = F('times_used') + 1
-            prompt.save()
+            prompt.trend_score = F('trend_score') + 1
+            prompt.save(update_fields=['times_used', 'trend_score'])
             prompt.refresh_from_db()
             return Response({
                 'viewed': True,
