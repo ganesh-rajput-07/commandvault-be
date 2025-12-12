@@ -71,7 +71,7 @@ class PromptViewSet(viewsets.ModelViewSet):
         return Response({'times_used': prompt.times_used})
     
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
-    def record_view(self, request, pk=None):
+    def record_view(self, request, slug=None):
         """Record that user viewed this prompt (opened detail modal)"""
         from .models import PromptView
         prompt = self.get_object()

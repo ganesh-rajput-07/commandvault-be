@@ -14,7 +14,7 @@ class OwnerSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'avatar', 'follower_count', 'is_following']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'avatar', 'follower_count', 'is_following']
     
     def get_is_following(self, obj):
         """Check if the current user is following this user"""
