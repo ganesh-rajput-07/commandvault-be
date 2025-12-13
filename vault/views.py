@@ -40,7 +40,7 @@ class PromptViewSet(viewsets.ModelViewSet):
             )
         
         if ai_model and ai_model.lower() != 'all':
-            queryset = queryset.filter(ai_model__iexact=ai_model)
+            queryset = queryset.filter(ai_model__icontains=ai_model)
         
         # Prefetch likes, saves, and views to avoid N+1 queries
         return queryset.select_related('owner', 'category').prefetch_related(
