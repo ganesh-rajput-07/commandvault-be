@@ -146,3 +146,63 @@ class UnfollowUserView(APIView):
             return Response({'message': 'Successfully unfollowed user'}, status=status.HTTP_200_OK)
         else:
             return Response({'message': 'You are not following this user'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VerifyEmailView(APIView):
+    """Verify user email with token"""
+    def get(self, request, token):
+        try:
+            user = User.objects.get(email_verification_token=token)
+            
+            # Check if token is still valid
+            if not user.is_verification_token_valid():
+                return Response({
+                    'error': 'Verification link has expired. Please request a new one.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Verify the email
+            user.is_email_verified = True
+            user.email_verification_token = None
+            user.email_verification_sent_at = None
+            user.save()
+            
+            return Response({
+                'message': 'Email verified successfully!'
+            }, status=status.HTTP_200_OK)
+            
+        except User.DoesNotExist:
+            return Response({
+                'error': 'Invalid verification link.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResendVerificationView(APIView):
+    """Resend verification email"""
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        user = request.user
+        
+        # Check if already verified
+        if user.is_email_verified:
+            return Response({
+                'message': 'Email is already verified.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check if user is Google account
+        if user.is_google_account:
+            return Response({
+                'message': 'Google accounts do not need email verification.'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Send verification email
+        from .utils import send_verification_email
+        try:
+            send_verification_email(user)
+            return Response({
+                'message': 'Verification email sent successfully!'
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                'error': f'Failed to send verification email: {str(e)}'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from .utils import send_verification_email
 
 User = get_user_model()
 
@@ -12,7 +13,18 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['password'] = make_password(validated_data['password'])
-        return super().create(validated_data)
+        user = super().create(validated_data)
+        
+        # Send verification email for non-Google users
+        if not user.is_google_account:
+            try:
+                send_verification_email(user)
+            except Exception as e:
+                # Log error but don't fail registration
+                print(f"Failed to send verification email: {e}")
+        
+        return user
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
@@ -23,9 +35,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'email', 'username', 'first_name', 'last_name', 'bio', 'avatar', 'banner', 'is_google_account', 
-                  'follower_count', 'following_count', 'date_joined', 'profile_updated_at', 'is_following', 'is_email_public')
+                  'follower_count', 'following_count', 'date_joined', 'profile_updated_at', 'is_following', 'is_email_public', 
+                  'is_email_verified')
         read_only_fields = ('id', 'is_google_account', 'follower_count', 
-                            'following_count', 'date_joined', 'profile_updated_at')
+                            'following_count', 'date_joined', 'profile_updated_at', 'is_email_verified')
     
     def get_email(self, obj):
         """Return email only if public or if it's the requesting user"""

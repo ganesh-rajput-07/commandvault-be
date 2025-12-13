@@ -1,7 +1,8 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import (RegisterView, GoogleLoginView, UserProfileView, UserUpdateView, 
-                    DeactivateAccountView, FollowUserView, UnfollowUserView, PublicUserProfileView)
+                    DeactivateAccountView, FollowUserView, UnfollowUserView, PublicUserProfileView,
+                    VerifyEmailView, ResendVerificationView)
 
 urlpatterns = [
     path('register/', RegisterView.as_view(), name='register'),
@@ -14,4 +15,7 @@ urlpatterns = [
     path('deactivate/', DeactivateAccountView.as_view(), name='deactivate'),
     path('users/<int:user_id>/follow/', FollowUserView.as_view(), name='follow-user'),
     path('users/<int:user_id>/unfollow/', UnfollowUserView.as_view(), name='unfollow-user'),
+    # Email Verification
+    path('verify-email/<str:token>/', VerifyEmailView.as_view(), name='verify-email'),
+    path('resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
 ]
