@@ -12,21 +12,33 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import environ
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Initialize environ
+env = environ.Env(
+    DEBUG=(bool, False),
+    SECURE_SSL_REDIRECT=(bool, False),
+    SESSION_COOKIE_SECURE=(bool, False),
+    CSRF_COOKIE_SECURE=(bool, False),
+)
+
+# Read .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-rhytpk9&)9oege_5en8!7lmmf9gr(e$p_idjbwg4+uswqn1rnq'
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-rhytpk9&)9oege_5en8!7lmmf9gr(e$p_idjbwg4+uswqn1rnq')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 
 # Application definition
@@ -58,7 +70,12 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS Configuration
+CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+])
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'commandvault.urls'
 
@@ -164,9 +181,32 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Google OAuth
-GOOGLE_CLIENT_ID = "895063316325-2lloidlfvrbj41mji6voiqm5tfq4choj.apps.googleusercontent.com"
+GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
+GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
 
-GOOGLE_CLIENT_SECRET="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"
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST', default='smtp.gmail.com')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='CommandVault <noreply@commandvault.com>')
+
+# Frontend URL (for email links)
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
+
+# Security Settings (Production)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = env('SECURE_SSL_REDIRECT')
+    SESSION_COOKIE_SECURE = env('SESSION_COOKIE_SECURE')
+    CSRF_COOKIE_SECURE = env('CSRF_COOKIE_SECURE')
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
 # Swagger/OpenAPI Settings
 SPECTACULAR_SETTINGS = {

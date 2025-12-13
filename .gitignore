@@ -1,4 +1,35 @@
+# Environment variables
+.env
+.env.local
+.env.production
+*.env
+
+# Python
 migrations/
 __pycache__/
-media/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual Environment
 venv/
+env/
+ENV/
+
+# Database
+*.sqlite3
+db.sqlite3
+
+# Media files
+media/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
