@@ -149,9 +149,10 @@ class FollowViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(follows, many=True)
         return Response(serializer.data)
 
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+class NotificationViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = NotificationSerializer
+    http_method_names = ['get', 'post', 'delete']  # Allow GET, POST, DELETE only
 
     def get_queryset(self):
         return Notification.objects.filter(user=self.request.user).select_related('related_user', 'related_prompt')
@@ -172,6 +173,12 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     def unread_count(self, request):
         count = Notification.objects.filter(user=request.user, is_read=False).count()
         return Response({'unread_count': count}, status=status.HTTP_200_OK)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Allow users to delete their own notifications"""
+        notification = self.get_object()
+        notification.delete()
+        return Response({'message': 'Notification deleted'}, status=status.HTTP_200_OK)
 
 class ReportViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
