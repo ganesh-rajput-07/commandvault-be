@@ -1,0 +1,44 @@
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Django
+*.log
+db.sqlite3
+media/
+staticfiles/
+
+# Environment
+.env
+.env.*
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Migrations (optional - uncomment if you want to exclude)
+# */migrations/*
+
+# Node (if any)
+node_modules/

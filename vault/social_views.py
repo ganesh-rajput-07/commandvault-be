@@ -6,6 +6,7 @@ from django.db.models import F
 from .models import Like, Comment, SavedPrompt, Follow, Notification, Report
 from .serializers import (LikeSerializer, CommentSerializer, SavedPromptSerializer, 
                           FollowSerializer, NotificationSerializer, ReportSerializer)
+from .permissions import IsCommentOwnerOrReadOnly, IsNotificationOwner, IsSavedPromptOwner
 
 class LikeViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]
@@ -46,7 +47,7 @@ class LikeViewSet(viewsets.GenericViewSet):
         return Response(serializer.data)
 
 class CommentViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsCommentOwnerOrReadOnly]
     serializer_class = CommentSerializer
 
     def get_queryset(self):

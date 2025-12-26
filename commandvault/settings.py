@@ -33,7 +33,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY', default='django-insecure-rhytpk9&)9oege_5en8!7lmmf9gr(e$p_idjbwg4+uswqn1rnq')
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
@@ -126,13 +126,14 @@ WSGI_APPLICATION = 'commandvault.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'CommandVault_DB',
-        'USER': 'postgres', 
-        'PASSWORD': 'ganesh',
-        'HOST': 'localhost',
-        'PORT': '5432', 
+        'NAME': env('DB_NAME'),
+        'USER': env('DB_USER'),
+        'PASSWORD': env('DB_PASSWORD'),
+        'HOST': env('DB_HOST', default='localhost'),
+        'PORT': env('DB_PORT', default='5432'),
     }
 }
+
 
 
 # Password validation
@@ -170,6 +171,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Media files (User uploads)
 MEDIA_URL = '/media/'
@@ -181,8 +183,8 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Google OAuth
-GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='')
-GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
+GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID_1')
+GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET_2')
 
 # Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
