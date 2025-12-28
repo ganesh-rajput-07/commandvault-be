@@ -14,7 +14,7 @@ class Prompt(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=300, blank=True, db_index=True)  # Not unique to avoid migration issues
     text = models.TextField()
-    ai_model = models.CharField(max_length=100, blank=True, help_text="AI model/tool used (e.g., ChatGPT-4, Claude, Gemini)")
+    ai_model = models.JSONField(default=list, blank=True, help_text="AI models/tools used (e.g., ['ChatGPT-4', 'Claude'])")
     example_output = models.TextField(blank=True, help_text="Example output from this prompt")
     
     # Media outputs

@@ -3,7 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django.db.models import Q, F
-from .models import Prompt, Category
+from django.db import transaction
+from .models import Prompt, Category, Like, SavedPrompt
 from .serializers import PromptSerializer, CategorySerializer
 from .permissions import IsOwnerOrReadOnly
 from .utils import auto_tag_and_use_case
@@ -57,13 +58,18 @@ class PromptViewSet(viewsets.ModelViewSet):
         # Ensure existing_tags is a list
         if isinstance(existing_tags, str):
             existing_tags = [existing_tags]
-        
+            
         # Merge tags
         merged = list(dict.fromkeys(existing_tags + tags))
         serializer.save(owner=self.request.user, tags=merged, use_case=use_case)
 
+    def perform_destroy(self, instance):
+        """Soft delete the prompt"""
+        instance.is_deleted = True
+        instance.save(update_fields=['is_deleted'])
+
     @action(detail=True, methods=['post'])
-    def increment_use(self, request, pk=None):
+    def increment_use(self, request, slug=None):
         prompt = self.get_object()
         prompt.times_used = F('times_used') + 1
         prompt.save()
@@ -89,12 +95,80 @@ class PromptViewSet(viewsets.ModelViewSet):
                 'message': 'View recorded',
                 'usage_count': prompt.times_used
             }, status=status.HTTP_201_CREATED)
-        else:
-            return Response({
-                'viewed': True,
-                'message': 'Already viewed',
-                'usage_count': prompt.times_used
-            }, status=status.HTTP_200_OK)
+        
+        return Response({
+            'viewed': True,
+            'message': 'View already recorded',
+            'usage_count': prompt.times_used
+        }, status=status.HTTP_200_OK)
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    def like(self, request, slug=None):
+        prompt = self.get_object()
+        user = request.user
+        
+        if request.method == 'POST':
+            with transaction.atomic():
+                like, created = Like.objects.get_or_create(user=user, prompt=prompt)
+                if created:
+                    prompt.like_count = F('like_count') + 1
+                    prompt.trend_score = F('trend_score') + 10  # Rewarded more for likes
+                    prompt.save(update_fields=['like_count', 'trend_score'])
+                    prompt.refresh_from_db()
+                    return Response({
+                        'liked': True, 
+                        'likes_count': prompt.like_count
+                    }, status=status.HTTP_201_CREATED)
+                return Response({
+                    'liked': True, 
+                    'likes_count': prompt.like_count
+                }, status=status.HTTP_200_OK)
+        
+        elif request.method == 'DELETE':
+            with transaction.atomic():
+                deleted_count, _ = Like.objects.filter(user=user, prompt=prompt).delete()
+                if deleted_count > 0:
+                    prompt.like_count = F('like_count') - 1
+                    prompt.trend_score = F('trend_score') - 10
+                    prompt.save(update_fields=['like_count', 'trend_score'])
+                    prompt.refresh_from_db()
+                return Response({
+                    'liked': False, 
+                    'likes_count': prompt.like_count
+                }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
+    def save_prompt(self, request, slug=None):
+        """Action name set to save_prompt to avoid any conflicts with Python/Django reserved words"""
+        prompt = self.get_object()
+        user = request.user
+        
+        if request.method == 'POST':
+            with transaction.atomic():
+                saved, created = SavedPrompt.objects.get_or_create(user=user, prompt=prompt)
+                if created:
+                    prompt.save_count = F('save_count') + 1
+                    prompt.save(update_fields=['save_count'])
+                    prompt.refresh_from_db()
+                    return Response({
+                        'saved': True, 
+                        'saves_count': prompt.save_count
+                    }, status=status.HTTP_201_CREATED)
+                return Response({
+                    'saved': True, 
+                    'saves_count': prompt.save_count
+                }, status=status.HTTP_200_OK)
+        
+        elif request.method == 'DELETE':
+            with transaction.atomic():
+                deleted_count, _ = SavedPrompt.objects.filter(user=user, prompt=prompt).delete()
+                if deleted_count > 0:
+                    prompt.save_count = F('save_count') - 1
+                    prompt.save(update_fields=['save_count'])
+                    prompt.refresh_from_db()
+                return Response({
+                    'saved': False, 
+                    'saves_count': prompt.save_count
+                }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def search(self, request):
@@ -141,7 +215,7 @@ class PromptViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
     
     @action(detail=True, methods=['get'])
-    def similar(self, request, pk=None):
+    def similar(self, request, slug=None):
         """Get similar prompts based on AI model and tags"""
         prompt = self.get_object()
         
