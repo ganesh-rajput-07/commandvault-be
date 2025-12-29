@@ -38,9 +38,29 @@ class Prompt(models.Model):
     comment_count = models.IntegerField(default=0)
     save_count = models.IntegerField(default=0)
     trend_score = models.FloatField(default=0.0)
+    trend_score = models.FloatField(default=0.0)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Forking Fields
+    parent_prompt = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='forks',
+        help_text="The prompt this was forked from"
+    )
+    original_creator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.SET_NULL,
+        null=True, 
+        blank=True,
+        related_name='originally_created_prompts',
+        help_text="The user who created the root ancestor of this prompt"
+    )
+    fork_depth = models.PositiveIntegerField(default=0, help_text="Distance from original (0 = original)")
 
     class Meta:
         ordering = ['-updated_at']
@@ -114,6 +134,7 @@ class PromptView(models.Model):
     """Track when users view prompts (open detail modal)"""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='prompt_views')
     prompt = models.ForeignKey(Prompt, on_delete=models.CASCADE, related_name='viewed_by')
+    source = models.CharField(max_length=50, default='direct', help_text="e.g., 'qr', 'web_share', 'search'")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -123,6 +144,27 @@ class PromptView(models.Model):
 
     def __str__(self):
         return f"{self.user.username} viewed {self.prompt.title}"
+
+class PromptUnlock(models.Model):
+    UNLOCK_METHODS = (
+        ('scroll', 'Scroll to Bottom'),
+        ('run', 'Run Prompt'),
+        ('creator', 'Creator'), # Implicit
+    )
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='unlocked_prompts')
+    prompt = models.ForeignKey(Prompt, on_delete=models.CASCADE, related_name='unlocks')
+    unlocked_at = models.DateTimeField(auto_now_add=True)
+    unlock_method = models.CharField(max_length=20, choices=UNLOCK_METHODS)
+
+    class Meta:
+        unique_together = ('user', 'prompt')
+        indexes = [
+            models.Index(fields=['user', 'prompt']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} unlocked {self.prompt.title} via {self.unlock_method}"
 
 class Follow(models.Model):
     follower = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='following')

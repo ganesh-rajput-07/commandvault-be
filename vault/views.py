@@ -4,10 +4,14 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from django.db.models import Q, F
 from django.db import transaction
-from .models import Prompt, Category, Like, SavedPrompt
-from .serializers import PromptSerializer, CategorySerializer
+from .models import Prompt, Category, Like, SavedPrompt, PromptUnlock
+from .serializers import PromptSerializer, CategorySerializer, PromptUnlockSerializer
 from .permissions import IsOwnerOrReadOnly
 from .utils import auto_tag_and_use_case
+from django.core import signing
+from django.conf import settings
+from django.urls import reverse
+import uuid
 
 class PromptViewSet(viewsets.ModelViewSet):
     serializer_class = PromptSerializer
@@ -236,10 +240,144 @@ class PromptViewSet(viewsets.ModelViewSet):
         # Order by relevance (same model first, then by trend score)
         similar_qs = similar_qs.select_related('owner').prefetch_related(
             'likes', 'saved_by', 'viewed_by'
-        ).order_by('-trend_score', '-like_count')[:6]
+        ).order_by('-trend_score', '-like_count')
         
-        serializer = self.get_serializer(similar_qs, many=True)
+        # If this is a fork, ensure parent is first
+        results = []
+        if prompt.parent_prompt and prompt.parent_prompt.is_public and not prompt.parent_prompt.is_deleted:
+            # Check if parent matches criteria (optional, but usually relevant)
+            # Actually user wants it ALWAYS first regardless of tags/model match?
+            # Yes, "original always first".
+            
+            # Exclude parent from similar_qs to avoid duplicates
+            similar_qs = similar_qs.exclude(id=prompt.parent_prompt.id)
+            
+            # Add parent to start
+            results.append(prompt.parent_prompt)
+            
+        # Get remaining (limit to 6 total)
+        remaining_count = 6 - len(results)
+        if remaining_count > 0:
+            results.extend(list(similar_qs[:remaining_count]))
+        
+        serializer = self.get_serializer(results, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def fork(self, request, slug=None):
+        """Fork a prompt to create a new version owned by the current user"""
+        source_prompt = self.get_object()
+        
+        # Prevent forking locked prompts (double check backend side)
+        serializer = self.get_serializer(source_prompt)
+        # Note: serializer.data access checks permissions/context, but we can do a direct check:
+        # If I am not owner and I haven't unlocked it, I shouldn't be valid to fork?
+        # Actually, let's just rely on the fact that if they can SEE it, they can fork it?
+        # But Requirement says: "Until unlocked: Copy is disabled, Fork button is disabled"
+        # So we should enforce lock check here.
+        
+        is_owner = source_prompt.owner == request.user
+        has_unlocked = source_prompt.unlocks.filter(user=request.user).exists()
+        
+        if not (is_owner or has_unlocked) and source_prompt.owner != request.user:
+             return Response(
+                 {"detail": "You must unlock this prompt before forking."}, 
+                 status=status.HTTP_403_FORBIDDEN
+             )
+             
+        # Check if user has already forked this prompt
+        existing_fork = Prompt.objects.filter(
+            owner=request.user, 
+            parent_prompt=source_prompt
+        ).first()
+        
+        if existing_fork:
+            return Response(
+                {"detail": "You have already forked this prompt.", "slug": existing_fork.slug}, 
+                status=status.HTTP_409_CONFLICT
+            )
+
+        with transaction.atomic():
+            # Clean up title to avoid "Title (Fork) (Fork)"
+            base_title = source_prompt.title
+            if base_title.endswith(" (Fork)"):
+                new_title = base_title  # Keep same title or maybe append number? simple is keep same.
+                # Or if we want to distinguish:
+                # new_title = f"{base_title} 2" 
+                # For now let's just ensure we don't stack (Fork)
+            else:
+                new_title = f"{base_title} (Fork)"
+
+            # Create new prompt instance
+            new_prompt = Prompt(
+                owner=request.user,
+                title=new_title,
+                text=source_prompt.text,
+                ai_model=source_prompt.ai_model,
+                tags=source_prompt.tags,
+                use_case=source_prompt.use_case,
+                category=source_prompt.category,
+                example_output=source_prompt.example_output,
+                output_type=source_prompt.output_type,
+                output_image=source_prompt.output_image,
+                output_video=source_prompt.output_video,
+                output_audio=source_prompt.output_audio,
+                # Fork metadata
+                # Fork metadata
+                parent_prompt=source_prompt,
+                original_creator=source_prompt.original_creator or source_prompt.owner,
+                fork_depth=source_prompt.fork_depth + 1,
+                # Reset stats
+                times_used=0,
+                like_count=0,
+                comment_count=0,
+                save_count=0,
+                trend_score=0.0
+            )
+            new_prompt.save()
+            
+            # Copy media files if needed (leaving empty for now as simple fork)
+            
+        return Response(self.get_serializer(new_prompt).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def unlock(self, request, slug=None):
+        """Unlock a prompt for reading"""
+        prompt = self.get_object()
+        method = request.data.get('method', 'scroll')
+        
+        if method not in dict(PromptUnlock.UNLOCK_METHODS):
+            return Response({"detail": "Invalid unlock method"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        unlock, created = PromptUnlock.objects.get_or_create(
+            user=request.user, 
+            prompt=prompt,
+            defaults={'unlock_method': method}
+        )
+        
+        return Response({'unlocked': True}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    def share_token(self, request, slug=None):
+        """Generate a secure share token/URL for QR codes"""
+        prompt = self.get_object()
+        
+        # Only owner should generate generic share tokens? Or anyone?
+        # Let's allow anyone to share.
+        
+        signer = signing.TimestampSigner()
+        value = signing.dumps({'prompt_id': prompt.id, 'source': 'qr'})
+        token = signer.sign(value)
+        
+        # Construct URL (assuming frontend route)
+        # Using settings.FRONTEND_URL ideally
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'http://localhost:3000')
+        share_url = f"{frontend_url}/prompt/{prompt.slug}?token={token}&source=qr"
+        
+        return Response({
+            'share_url': share_url,
+            'token': token
+        })
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
