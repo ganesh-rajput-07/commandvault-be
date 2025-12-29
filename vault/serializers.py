@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Prompt, Category, PromptVersion, Like, Comment, SavedPrompt, PromptView, Follow, Notification, Report
+from .models import Prompt, Category, PromptVersion, Like, Comment, SavedPrompt, PromptView, Follow, Notification, Report, PromptUnlock
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -24,6 +24,13 @@ class OwnerSerializer(serializers.ModelSerializer):
         return False
 
 
+class PromptUnlockSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromptUnlock
+        fields = ['id', 'user', 'prompt', 'unlocked_at', 'unlock_method']
+        read_only_fields = ['unlocked_at']
+
+
 class PromptSerializer(serializers.ModelSerializer):
     owner = OwnerSerializer(read_only=True)
     versions = PromptVersionSerializer(many=True, read_only=True)
@@ -32,11 +39,17 @@ class PromptSerializer(serializers.ModelSerializer):
     is_liked_by_user = serializers.SerializerMethodField()
     is_saved_by_user = serializers.SerializerMethodField()
     is_viewed_by_user = serializers.SerializerMethodField()
+    is_locked = serializers.SerializerMethodField()
     
     # Field aliases for frontend compatibility
     likes_count = serializers.IntegerField(source='like_count', read_only=True)
     saves_count = serializers.IntegerField(source='save_count', read_only=True)
     usage_count = serializers.IntegerField(source='times_used', read_only=True)
+
+    # Forking Metadata
+    parent_prompt_title = serializers.ReadOnlyField(source='parent_prompt.title', allow_null=True)
+    parent_prompt_slug = serializers.ReadOnlyField(source='parent_prompt.slug', allow_null=True)
+    original_creator_username = serializers.ReadOnlyField(source='original_creator.username', allow_null=True)
 
     class Meta:
         model = Prompt
@@ -45,9 +58,24 @@ class PromptSerializer(serializers.ModelSerializer):
                   'tags', 'use_case', 'category', 'is_public',
                   'usage_count', 'likes_count', 'comment_count', 'saves_count', 'trend_score',
                   'is_liked_by_user', 'is_saved_by_user', 'is_viewed_by_user',
-                  'created_at', 'updated_at', 'versions']
+                  'created_at', 'updated_at', 'versions',
+                  'parent_prompt', 'parent_prompt_title', 'parent_prompt_slug', 
+                  'original_creator', 'original_creator_username', 'fork_depth', 'is_locked']
         read_only_fields = ['owner', 'slug', 'usage_count', 'likes_count', 'comment_count', 
-                            'saves_count', 'trend_score', 'created_at', 'updated_at']
+                            'saves_count', 'trend_score', 'created_at', 'updated_at',
+                            'parent_prompt', 'original_creator', 'fork_depth', 'is_locked']
+    
+    def get_is_locked(self, obj):
+        return False
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        
+        # Text truncation removed
+            
+        return ret
+            
+        return ret
     
     def get_is_liked_by_user(self, obj):
         """Check if the current user has liked this prompt"""
