@@ -18,17 +18,28 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.sitemaps.views import sitemap
+from vault.sitemaps import PromptSitemap, UserSitemap
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+
+sitemaps = {
+    'prompts': PromptSitemap,
+    'users': UserSitemap,
+}
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('vault.urls')),
     path('api/auth/', include('UserAUth.urls')),
     
+    
     # Swagger/OpenAPI URLs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    
+    # SEO Sitemap
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
 ]
 
 # Serve media files in development
