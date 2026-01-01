@@ -16,7 +16,7 @@ class PromptSitemap(Sitemap):
 
     def location(self, obj):
         # Point to the React Frontend URL
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://commandvault.com')
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://command-vault-fe.vercel.app')
         # Remove trailing slash if present to avoid double slashes
         if frontend_url.endswith('/'):
             frontend_url = frontend_url[:-1]
@@ -35,7 +35,21 @@ class UserSitemap(Sitemap):
 
     def location(self, obj):
         # Point to the React Frontend URL
-        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://commandvault.com')
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://command-vault-fe.vercel.app')
         if frontend_url.endswith('/'):
             frontend_url = frontend_url[:-1]
         return f"{frontend_url}/profile/{obj.username}"
+
+class StaticSitemap(Sitemap):
+    changefreq = "daily"
+    priority = 1.0
+    protocol = 'https'
+
+    def items(self):
+        return ['/', '/explore', '/trending', '/login', '/register']
+
+    def location(self, item):
+        frontend_url = getattr(settings, 'FRONTEND_URL', 'https://command-vault-fe.vercel.app')
+        if frontend_url.endswith('/'):
+            frontend_url = frontend_url[:-1]
+        return f"{frontend_url}{item}"
