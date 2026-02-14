@@ -23,6 +23,12 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Serve static files
-application = WhiteNoise(application, root=str(BASE_DIR / 'staticfiles'))
+static_root = str(BASE_DIR / 'staticfiles')
+if not os.path.exists(static_root):
+    try:
+        os.makedirs(static_root)
+    except OSError:
+        pass
+application = WhiteNoise(application, root=static_root)
 app = application
 

@@ -16,6 +16,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import HttpResponse
+
+def home(request):
+    return HttpResponse("Backend Running Sccessfully! Visit /api/ or /admin/")
+
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
@@ -31,6 +37,7 @@ sitemaps = {
 }
 
 urlpatterns = [
+    path('', home, name='home'),
     path('admin/', admin.site.urls),
     path('api/', include('vault.urls')),
     path('api/auth/', include('UserAUth.urls')),
