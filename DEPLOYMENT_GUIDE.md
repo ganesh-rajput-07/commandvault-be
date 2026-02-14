@@ -67,5 +67,5 @@ Vercel will build the project using `build_files.sh` (installing dependencies an
     -   Option B: Use the Vercel specialized migration integration if available, but Option A is safest.
 
 ## Troubleshooting
--   **Static Files not loading?**: Ensure `whitenoise` is installed and `build_files.sh` ran successfully.
--   **Database Error?**: Check your Environment Variables and ensure your database accepts connections from internet (0.0.0.0/0 or Vercel IP ranges).
+-   **Static Files**: Ensure `whitenoise.middleware.WhiteNoiseMiddleware` is in `MIDDLEWARE` just after `SecurityMiddleware`. Also, verify `STATIC_ROOT` points to `staticfiles`.
+-   **Vercel Output Directory**: In Vercel Project Settings > Build & Development Settings, set **Output Directory** to `staticfiles`.
