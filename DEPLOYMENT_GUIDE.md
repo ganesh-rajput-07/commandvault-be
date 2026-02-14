@@ -68,4 +68,4 @@ Vercel will build the project using `build_files.sh` (installing dependencies an
 
 ## Troubleshooting
 -   **Static Files**: Ensure `whitenoise.middleware.WhiteNoiseMiddleware` is in `MIDDLEWARE` just after `SecurityMiddleware`. Also, verify `STATIC_ROOT` points to `staticfiles`.
--   **Vercel Output Directory**: In Vercel Project Settings > Build & Development Settings, set **Output Directory** to `staticfiles`.
+-   **Missing Static Files?**: Ensure your build output directory is `staticfiles` or `staticfiles_build` (depending on what you configured). Vercel requires the static files to physically exist in the build output.

@@ -15,8 +15,14 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'promptdeck.settings')
 
 application = get_wsgi_application()
 
+
 # Serve static files on Vercel
 from whitenoise import WhiteNoise
-application = WhiteNoise(application, root='./staticfiles')
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Serve static files
+application = WhiteNoise(application, root=str(BASE_DIR / 'staticfiles'))
 app = application
 
