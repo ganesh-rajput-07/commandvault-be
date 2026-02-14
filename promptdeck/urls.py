@@ -20,12 +20,14 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.sitemaps.views import sitemap
 from vault.sitemaps import PromptSitemap, UserSitemap, StaticSitemap
+from blog.sitemaps import BlogSitemap
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 sitemaps = {
     'static': StaticSitemap,
     'prompts': PromptSitemap,
     'users': UserSitemap,
+    'blog': BlogSitemap,
 }
 
 urlpatterns = [
@@ -33,6 +35,7 @@ urlpatterns = [
     path('api/', include('vault.urls')),
     path('api/auth/', include('UserAUth.urls')),
     path('api/ai/', include('ai_engine.urls')),
+    path('api/blog/', include('blog.urls')),
     
     
     # Swagger/OpenAPI URLs

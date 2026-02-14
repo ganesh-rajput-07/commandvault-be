@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     'vault',
     'UserAUth',
     'ai_engine',
+    'blog',
 ]
 
 AUTH_USER_MODEL = 'UserAUth.User'
