@@ -12,5 +12,5 @@
             "dest": "promptdeck/wsgi.py"
         }
     ],
-    "buildCommand": "python manage.py collectstatic --noinput"
+    "buildCommand": "bash build_files.sh"
 }
