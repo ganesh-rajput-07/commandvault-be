@@ -32,6 +32,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('vault.urls')),
     path('api/auth/', include('UserAUth.urls')),
+    path('api/ai/', include('ai_engine.urls')),
     
     
     # Swagger/OpenAPI URLs

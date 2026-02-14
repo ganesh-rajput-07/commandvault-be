@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import timedelta
 import environ
 import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,7 +39,12 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
+
+CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app', 'https://command-vault-fe.vercel.app']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 ALLOWED_HOSTS = ['*']
+
 
 
 # Application definition
@@ -58,6 +64,7 @@ INSTALLED_APPS = [
     'cloudinary_storage',
     'vault',
     'UserAUth',
+    'ai_engine',
 ]
 
 AUTH_USER_MODEL = 'UserAUth.User'
@@ -84,7 +91,7 @@ CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
 
 CORS_ALLOW_CREDENTIALS = True
 
-ROOT_URLCONF = 'commandvault.urls'
+ROOT_URLCONF = 'promptdeck.urls'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -124,22 +131,18 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'commandvault.wsgi.application'
+WSGI_APPLICATION = 'promptdeck.wsgi.application'
 
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': env('DB_NAME'),
-        'USER': env('DB_USER'),
-        'PASSWORD': env('DB_PASSWORD'),
-        'HOST': env('DB_HOST', default='localhost'),
-        'PORT': env('DB_PORT', default='5432'),
-        'OPTIONS': {'sslmode': 'require'},
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
@@ -210,7 +213,7 @@ EMAIL_PORT = env.int('EMAIL_PORT', default=587)
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = env('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='CommandVault <noreply@commandvault.com>')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL', default='PromptDeck <noreply@promptdeck.com>')
 
 # Frontend URL (for email links)
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
@@ -229,7 +232,7 @@ if not DEBUG:
 
 # Swagger/OpenAPI Settings
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'CommandVault API',
+    'TITLE': 'PromptDeck API',
     'DESCRIPTION': 'AI Prompt Storage & Sharing Platform API Documentation',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,

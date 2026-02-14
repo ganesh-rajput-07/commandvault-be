@@ -1,4 +1,4 @@
-# CommandVault Backend - AI Prompt Storage
+# PromptDeck Backend - AI Prompt Storage
 
 A comprehensive Django REST API for storing, sharing, and managing AI prompts with social features.
 
